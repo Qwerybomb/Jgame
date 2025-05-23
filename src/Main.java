@@ -2,14 +2,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class Main {
 
     public static void main(String[] args) {
         Window win = new Window();
+        win.constructGame();
     }
 }
 class Window extends JFrame {
@@ -18,12 +16,12 @@ class Window extends JFrame {
     JFrame f1 = new JFrame();
     JButton b1 = new JButton("fml");
     JTextField keyboard = new JTextField();
-    Window() {
+    public void constructGame() {
         //properly create the check for key presses
-        keyboard.addKeyListener(new Keycheck());
+        keyboard.addKeyListener(new Keycheck(this));
 
         // Size the button properly
-        b1.setBounds(50, 50, 20, 20);
+        b1.setBounds(0, 0, 20, 20);
 
         // create JPanel and add the button (and keyboard)
         p1.setSize(new Dimension(400, 300));
@@ -39,20 +37,22 @@ class Window extends JFrame {
         f1.add(p1);
         f1.setVisible(true);
     }
-    public void updateButtonPositions(int x, int y, JButton b) {
+    public void updateButtonPosition(int x, int y, JButton b) {
         b.setLocation(x, y);
     }
 }
 //class that aids the JTextField in searching for keys
  class Keycheck extends KeyAdapter {
+    Window win;
     public char ch;
+    // Takes the main constructed window object and puts it here MIGHT be a bad idea
+    Keycheck(Window w) {
+        win = w;
+    }
     @Override
     public void keyPressed(KeyEvent event) {
          ch = event.getKeyChar();
          // code to run when Key press event happens goes here
-        Path path = Paths.get("Main.java");
-        Path cool = path.toAbsolutePath();
-        System.out.println(cool);
 
     }
 }
