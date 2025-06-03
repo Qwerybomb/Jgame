@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.*;
 
 public class Main {
 
@@ -13,50 +14,56 @@ public class Main {
         Path assetLocation = baseParent.resolve("Assets");
         game gameObj = new game();
         gameObj.constructGame(assetLocation);
+        gameObj.beginGame();
     }
 }
-class baseLogic {
+interface baseLogic { // contains the base swing components to be implemented and used anywhere
     //create the base components
     JPanel mainPanel = new JPanel();
     JFrame mainFrame = new JFrame();
-    JButton paddleP1 = new JButton();
-    JButton paddleP2 = new JButton();
+    JLabel paddleP1 = new JLabel();
+    JLabel paddleP2 = new JLabel();
     JButton ball = new JButton();
     JTextField keyboard = new JTextField();
     JLabel coolBg = new JLabel();
 
-    // allow a Component Button to be repositioned
-    public void updateButtonPosition(int x, int y, JButton b) {
+    // create global variables (atomic may be needed due to the nature of interfaces)
+    static int speed = 4;
+    AtomicBoolean moveToggleP1 = new AtomicBoolean(false);
+    AtomicBoolean moveToggleP2 = new AtomicBoolean(false);
+    AtomicInteger upOrDownMPp1 = new AtomicInteger(0);
+    AtomicInteger upOrDownMPp2 = new AtomicInteger(0);
+
+    // allow a Component Label to be repositioned
+    public static void updateButtonPosition(int x, int y, JLabel b) {
         b.setLocation(x, y);
     }
 
 }
-class game extends baseLogic {
+class game implements baseLogic {
     // function to construct the game with correct properties
     public void constructGame(Path imageFolder) {
         // Format the paddles
+        ImageIcon paddleTexture = new ImageIcon(String.valueOf(imageFolder.resolve("paddle.png")));
         paddleP1.setBounds(0, 0, 20, 70);
-        paddleP1.setMargin(new Insets(0, 0, 0, 0));
         paddleP1.setBorder(null);
         paddleP2.setBounds(365,0,20,70);
-        paddleP2.setMargin(new Insets(0,0,0,0));
         paddleP2.setBorder(null);
-        paddleP1.setIcon( new ImageIcon(String.valueOf(imageFolder.resolve("paddle.png"))));
-        paddleP2.setIcon( new ImageIcon(String.valueOf(imageFolder.resolve("paddle.png"))));
+        paddleP1.setIcon(paddleTexture);
+        paddleP2.setIcon(paddleTexture);
 
         // make cool background
-        coolBg.setBounds(100,100,1000,1000);
+        ImageIcon bgImg = new ImageIcon(String.valueOf(imageFolder.resolve("grid.png")));
+        coolBg.setBounds(25,0,bgImg.getIconWidth(),bgImg.getIconHeight());
         coolBg.setBorder(null);
-        coolBg.setIcon(new ImageIcon(String.valueOf(imageFolder.resolve("ball.png"))));
-       System.out.println(coolBg.getHorizontalAlignment());
-
+        coolBg.setIcon(bgImg);
 
         // create JPanel and add the button (and keyboard)
         mainPanel.setSize(new Dimension(400, 300));
+        mainPanel.add(coolBg);
         mainPanel.add(paddleP1);
         mainPanel.add(paddleP2);
         mainPanel.add(keyboard);
-        mainPanel.add(coolBg);
         mainPanel.setLayout(null);
         mainPanel.setBackground(Color.black);
         
@@ -75,35 +82,36 @@ class game extends baseLogic {
         keyboard.requestFocusInWindow();
     }
     public void beginGame() {
+        while (true) {
+            // paddle Movement Logic
+        if (moveToggleP1.get()) {
+            baseLogic.paddleP1.setLocation(0, baseLogic.paddleP1.getY() + speed * upOrDownMPp1.get());
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+
+
+        }
     }
 }
 //class that aids the JTextField in searching for keys
- class Keycheck extends KeyAdapter {
-    baseLogic game = new baseLogic();
-    public char ch;
-    // Takes the main constructed window object and puts it here MIGHT be a bad idea
-    @Override
-    public void keyPressed(KeyEvent event) {
+ class Keycheck extends KeyAdapter implements baseLogic {
+    char ch = '0';
+     @Override
+     public void keyPressed(KeyEvent event) {
         // code to run when Key press event happens goes here
         ch = event.getKeyChar();
-        System.out.print(ch);
+        moveToggleP1.set(true);
+        if (ch == 'w') upOrDownMPp1.set(1);
+        if (ch == 's') upOrDownMPp1.set(-1);
     }
-    @Override
-    public void keyReleased(KeyEvent event) {
-        // code to run when Key release event happens goes here
-        System.out.print("|");
-    }
-    // thread for enabling keyEvents to work while running primary game logic
-    Runnable myRunnable = new Runnable() {
-        @Override
-        public void run() {
-            /* code to run for key logic here */
-              if (ch == 'w' || ch == 's') {
-                  game.paddleP1.setLocation(game.paddleP1.getLocation());
-              }
-            if (ch == 'i' || ch == 'k') {
-
-              }
-            }
-        };
+     @Override
+     public void keyReleased(KeyEvent event) {
+         moveToggleP1.set(false);
+ }
 }
