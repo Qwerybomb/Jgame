@@ -26,12 +26,16 @@ interface baseLogic { // contains the base swing components to be implemented an
     JLabel ball = new JLabel();
     JTextField keyboard = new JTextField();
     JLabel coolBg = new JLabel();
+    JLabel coolBgL2 = new JLabel();
 
     // create global variables (atomic may be needed due to the nature of interfaces)
     static int speed = 4;
+    static int tickLengthInMs = 10;
+    static int ballTravelConstant = 5;
     AtomicInteger upOrDownMPp1 = new AtomicInteger(0);
     AtomicInteger upOrDownMPp2 = new AtomicInteger(0);
     // allow a Component Label to be repositioned
+
     public static void updateButtonPosition(int x, int y, JLabel b) {
         b.setLocation(x, y);
     }
@@ -54,6 +58,9 @@ class game implements baseLogic {
         coolBg.setBounds(0,0,bgImg.getIconWidth(),bgImg.getIconHeight());
         coolBg.setBorder(null);
         coolBg.setIcon(bgImg);
+        coolBgL2.setBounds(-5,-5,bgImg.getIconWidth(),bgImg.getIconHeight());
+        coolBgL2.setBorder(null);
+        coolBgL2.setIcon(bgImg);
 
         // make the ball for the gmae :3
         ImageIcon ballIcon = new ImageIcon(String.valueOf(imageFolder.resolve("ball.png")));
@@ -64,6 +71,7 @@ class game implements baseLogic {
         // create JPanel and add the button (and keyboard)
         mainPanel.setSize(new Dimension(400, 300));
         mainPanel.add(coolBg);
+        mainPanel.add(coolBgL2);
         mainPanel.add(paddleP1);
         mainPanel.add(paddleP2);
         mainPanel.add(keyboard);
@@ -85,30 +93,81 @@ class game implements baseLogic {
         keyboard.addKeyListener(new keyCheck());
         keyboard.requestFocusInWindow();
     }
+
+    // function for starting the game
     public void beginGame() {
-        while (true) {
         // paddle Movement Logic
-            baseLogic.paddleP1.setLocation(0, baseLogic.paddleP1.getY() + speed * upOrDownMPp1.get());
-            baseLogic.paddleP2.setLocation(365, baseLogic.paddleP2.getY() + speed * upOrDownMPp2.get());
-            if (paddleP1.getY() < 0) paddleP1.setLocation(0, 0);
-            if (paddleP1.getY() > 200) paddleP1.setLocation(0, 200);
-            if (paddleP2.getY() < 0) paddleP2.setLocation(365, 0);
-            if (paddleP2.getY() > 200) paddleP2.setLocation(365, 200);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        Thread Paddles = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    baseLogic.paddleP1.setLocation(0, baseLogic.paddleP1.getY() + speed * upOrDownMPp1.get());
+                    baseLogic.paddleP2.setLocation(365, baseLogic.paddleP2.getY() + speed * upOrDownMPp2.get());
+                    if (paddleP1.getY() < 0) paddleP1.setLocation(0, 0);
+                    if (paddleP1.getY() > 200) paddleP1.setLocation(0, 200);
+                    if (paddleP2.getY() < 0) paddleP2.setLocation(365, 0);
+                    if (paddleP2.getY() > 200) paddleP2.setLocation(365, 200);
+
+                    // wait
+                    try {
+                        Thread.sleep(tickLengthInMs);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
-            // Continue Logic path here
+        });
 
-        }
+        // background animation
+        Thread background = new Thread(new Runnable() {
+            boolean moveMode = false;
+            final int farLimit = 30;
+            final int minLimit = -30;
+            @Override
+            public void run() {
+                while (true) {
+                  coolBg.setLocation(ball.getX() / 30, (paddleP1.getY() + paddleP2.getY()) / 30);
+                  coolBgL2.setLocation(ball.getX() / 50, (paddleP1.getY() + paddleP2.getY()) / 50);
+                }
+            }
+        });
 
+        //Ball calculations
+        Thread ballMove = new Thread(new Runnable() {
+            double ballAngle = 20;
+            @Override
+            public void run() {
+                while (true) {
+                    ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                    ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
+                    if (ball.getX() > 360 || ball.getX() < 20) {
+                        ballAngle *= -1;
+                        ballAngle -= 180;
+                        ball.setLocation(Math.clamp((ball.getX()),20, 360), ball.getY());
+                    }
+                    if (ball.getY() > 240 || ball.getY() < 0) {
+                      //  ballAngle *= -1;
+                        ballAngle -= 180;
+                        ball.setLocation(ball.getX(),Math.clamp((ball.getY()),0, 240));
+                    }
+                    try {
+                        Thread.sleep(tickLengthInMs);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+
+        // begin
+        Paddles.start();
+        background.start();
+        ballMove.start();
     }
 }
 //class that aids the JTextField in searching for keys
  class keyCheck extends KeyAdapter implements baseLogic {
     char ch = '0';
-
     @Override
     public void keyPressed(KeyEvent event) {
         // code to run when Key press event happens goes here
