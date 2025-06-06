@@ -27,11 +27,14 @@ interface baseLogic { // contains the base swing components to be implemented an
     JTextField keyboard = new JTextField();
     JLabel coolBg = new JLabel();
     JLabel coolBgL2 = new JLabel();
+    JLabel scoreCounter = new JLabel("0");
 
     // create global variables (atomic may be needed due to the nature of interfaces)
-    static int speed = 4;
-    static int tickLengthInMs = 10;
-    static int ballTravelConstant = 5;
+    int speed = 4;
+    int tickLengthInMs = 10;
+    int ballTravelConstant = 5;
+    int boundsMinimum = 0;
+    int boundsMaximum = 0;
     AtomicInteger upOrDownMPp1 = new AtomicInteger(0);
     AtomicInteger upOrDownMPp2 = new AtomicInteger(0);
     // allow a Component Label to be repositioned
@@ -62,6 +65,14 @@ class game implements baseLogic {
         coolBgL2.setBorder(null);
         coolBgL2.setIcon(bgImg);
 
+        // make the score counter
+        scoreCounter.setLocation(160, -20);
+        scoreCounter.setSize(new Dimension(100,100));
+        scoreCounter.setText("0");
+        scoreCounter.setFont(new Font("Monospaced", Font.BOLD, 30));
+        scoreCounter.setForeground(Color.WHITE);
+
+
         // make the ball for the gmae :3
         ImageIcon ballIcon = new ImageIcon(String.valueOf(imageFolder.resolve("ball.png")));
         ball.setBounds(100,100,ballIcon.getIconWidth(),ballIcon.getIconHeight());
@@ -76,6 +87,7 @@ class game implements baseLogic {
         mainPanel.add(paddleP2);
         mainPanel.add(keyboard);
         mainPanel.add(ball);
+        mainPanel.add(scoreCounter);
         mainPanel.setLayout(null);
         mainPanel.setBackground(Color.black);
 
@@ -138,18 +150,32 @@ class game implements baseLogic {
             @Override
             public void run() {
                 while (true) {
+                    // move the ball a constant amount per tick
                     ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
                     ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
-                    if (ball.getX() > 360 || ball.getX() < 20) {
-                        ballAngle *= -1;
-                        ballAngle -= 180;
-                        ball.setLocation(Math.clamp((ball.getX()),20, 360), ball.getY());
+
+                    // checks for collision and if no collison then is it out of the map
+                    if (ball.getBounds().intersects(paddleP1.getBounds()) || ball.getBounds().intersects(paddleP2.getBounds())) {
+                       if (ball.getBounds().intersects(paddleP1.getBounds())) {
+                           ballAngle *= -1 + ((double) (ball.getY() - paddleP1.getY()) / 20);
+                           ballAngle -= 180;
+                           ball.setLocation(Math.clamp((ball.getX()),20, 340), ball.getY());
+                       } else {
+                           ballAngle *= -1 - ((double) (ball.getY() - paddleP2.getY()) / 20);
+                           ballAngle -= 180;
+                           ball.setLocation(Math.clamp((ball.getX()),20, 340), ball.getY());
+                        }
+
+                    } else if (!ball.getBounds().intersects(mainPanel.getBounds())) {
+                        ball.setLocation(100,100);
+                        ballAngle = 1;
+                        scoreCounter.setText(Integer.toString(Integer.valueOf(scoreCounter.getText()) + 1));
                     }
                     if (ball.getY() > 240 || ball.getY() < 0) {
-                      //  ballAngle *= -1;
-                        ballAngle -= 180;
+                        ballAngle *= -1;
                         ball.setLocation(ball.getX(),Math.clamp((ball.getY()),0, 240));
                     }
+
                     try {
                         Thread.sleep(tickLengthInMs);
                     } catch (InterruptedException e) {
