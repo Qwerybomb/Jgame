@@ -167,13 +167,13 @@ class game implements baseLogic {
                     // checks for collision
                     if (ball.getBounds().intersects(paddleP1.getBounds()) || ball.getBounds().intersects(paddleP2.getBounds())) {
                        if (ball.getBounds().intersects(paddleP1.getBounds())) {
-                           ballAngle -= 180;
-                           ballAngle -= -ballAngle - ((double) ((ball.getY() - paddleP1.getY())) / 50);
-                           ball.setLocation(Math.clamp((ball.getX()),20, 340), ball.getY());
+                           ballAngle *= -1;
+                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP1.getY())) / 2));
+                           ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
                        } else {
                            ballAngle *= -1;
-                           ballAngle = ballAngle + (180 - ((double) ((ball.getY() - paddleP1.getY())) / 10));
-                           ball.setLocation(Math.clamp((ball.getX()),20, 300), ball.getY());
+                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 5));
+                           ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
                         }
                     // checks to see if ball is in bounds or out of bounds
 
@@ -188,6 +188,7 @@ class game implements baseLogic {
                     }
                     if (ball.getY() > 240 || ball.getY() < 0) {
                         ballAngle *= -1;
+                        ballAngle += Math.random() * 10;
                         ball.setLocation(ball.getX(),Math.clamp((ball.getY()),0, 240));
                     }
 
