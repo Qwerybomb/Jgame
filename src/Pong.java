@@ -44,6 +44,13 @@ interface baseLogic { // contains the base swing components to be implemented an
     public static void updateButtonPosition(int x, int y, JLabel b) {
         b.setLocation(x, y);
     }
+    public static void tryWait(int Length) {
+        try {
+            Thread.sleep(Length);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
 class game implements baseLogic {
@@ -129,11 +136,7 @@ class game implements baseLogic {
                     if (paddleP2.getY() > 200) paddleP2.setLocation(365, 200);
 
                     // wait
-                    try {
-                        Thread.sleep(tickLengthInMs);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    baseLogic.tryWait(tickLengthInMs);
                 }
             }
         });
@@ -155,7 +158,7 @@ class game implements baseLogic {
         //Ball calculations
         Thread ballMove = new Thread(new Runnable() {
             double ballAngle = 20;
-            int loopThru = 0;
+            int bAstorage = 0;
             @Override
             public void run() {
                 while (true) {
@@ -167,25 +170,44 @@ class game implements baseLogic {
                     // checks for collision
                     if (ball.getBounds().intersects(paddleP1.getBounds()) || ball.getBounds().intersects(paddleP2.getBounds())) {
                        if (ball.getBounds().intersects(paddleP1.getBounds())) {
+
+                           // flips the balls incoming trajectory
                            ballAngle *= -1;
-                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP1.getY())) / 2));
+
+                           // reverses the previous trajectory to get an exit trajectory
+                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+
+                           // sets the trajectory within a certain locationary bounds
+                           ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                                   ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
                            ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
                        } else {
+
+                           // flips the balls incoming trajectory
                            ballAngle *= -1;
-                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 5));
+
+                           // reverses the previous trajectory to get an exit trajectory
+                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+
+                           // sets the trajectory within a certain locationary bounds
+                           ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                                   ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
                            ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
                         }
-                    // checks to see if ball is in bounds or out of bounds
 
+                    // checks to see if ball is in bounds or out of bounds
                     } else if (!ball.getBounds().intersects(mainPanel.getBounds())) {
+                        bAstorage = ball.getX();
                         ball.setLocation(100,100);
                         ballAngle = 1;
-                        if (ball.getX() > 0) {
+                        if (bAstorage > 50) {
                             scoreCounterP1.setText(Integer.toString(Integer.valueOf(scoreCounterP1.getText()) + 1));
                         } else {
                             scoreCounterP2.setText(Integer.toString(Integer.valueOf(scoreCounterP2.getText()) + 1));
                         }
                     }
+
+                    // randomize roof bounce angles cause why not
                     if (ball.getY() > 240 || ball.getY() < 0) {
                         ballAngle *= -1;
                         ballAngle += Math.random() * 10;
@@ -193,11 +215,7 @@ class game implements baseLogic {
                     }
 
                     // sleep to maintain tick rate
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    baseLogic.tryWait(tickLengthInMs);
                 }
             }
         });
