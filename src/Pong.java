@@ -54,6 +54,11 @@ interface baseLogic { // contains the base swing components to be implemented an
 
 }
 class game implements baseLogic {
+   //important ball storage things
+    double ballAngle = 30;
+    int bAstorage = 0;
+    int balLastPos = 0;
+
     // function to construct the game with correct properties
     public void constructGame(Path imageFolder) {
         // Format the paddles
@@ -123,107 +128,88 @@ class game implements baseLogic {
 
     // function for starting the game
     public void beginGame() {
-        // paddle Movement Logic
-        Thread Paddles = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    baseLogic.paddleP1.setLocation(0, baseLogic.paddleP1.getY() + speed * upOrDownMPp1.get());
-                    baseLogic.paddleP2.setLocation(365, baseLogic.paddleP2.getY() + speed * upOrDownMPp2.get());
-                    if (paddleP1.getY() < 0) paddleP1.setLocation(0, 0);
-                    if (paddleP1.getY() > 200) paddleP1.setLocation(0, 200);
-                    if (paddleP2.getY() < 0) paddleP2.setLocation(365, 0);
-                    if (paddleP2.getY() > 200) paddleP2.setLocation(365, 200);
+   while (true) {
+       paddleIterator();
+       BgIterate();
+       BallIterate();
+       baseLogic.tryWait(tickLengthInMs);
+   }
+    }
+    
+    // paddle Movement Logic
+    public void paddleIterator() {
 
-                    // wait
-                    baseLogic.tryWait(tickLengthInMs);
-                }
+                baseLogic.paddleP1.setLocation(0, baseLogic.paddleP1.getY() + speed * upOrDownMPp1.get());
+                baseLogic.paddleP2.setLocation(365, baseLogic.paddleP2.getY() + speed * upOrDownMPp2.get());
+                if (paddleP1.getY() < 0) paddleP1.setLocation(0, 0);
+                if (paddleP1.getY() > 200) paddleP1.setLocation(0, 200);
+                if (paddleP2.getY() < 0) paddleP2.setLocation(365, 0);
+                if (paddleP2.getY() > 200) paddleP2.setLocation(365, 200);
             }
-        });
 
-        // background animation
-        Thread background = new Thread(new Runnable() {
-            boolean moveMode = false;
-            final int farLimit = 30;
-            final int minLimit = -30;
-            @Override
-            public void run() {
-                while (true) {
-                  coolBg.setLocation(ball.getX() / 30, (paddleP1.getY() + paddleP2.getY()) / 30);
-                  coolBgL2.setLocation(ball.getX() / 50, (paddleP1.getY() + paddleP2.getY()) / 50);
-                }
-            }
-        });
-
-        //Ball calculations
-        Thread ballMove = new Thread(new Runnable() {
-            double ballAngle = 20;
-            int bAstorage = 0;
-            @Override
-            public void run() {
-                while (true) {
-
-                    // move the ball a constant amount per tick
-                    ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+    // background animation
+    public void BgIterate() {
+        boolean moveMode = false;
+        final int farLimit = 30;
+        final int minLimit = -30;
+                coolBg.setLocation(ball.getX() / 30, (paddleP1.getY() + paddleP2.getY()) / 30);
+                coolBgL2.setLocation(ball.getX() / 50, (paddleP1.getY() + paddleP2.getY()) / 50);
+        }
+        
+    //Ball calculations
+    public void BallIterate() {
+        if (!(ball.getX() > 330)) {
+            // move the ball a constant amount per tick
+            ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
                     ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
 
-                    // checks for collision
-                    if (ball.getBounds().intersects(paddleP1.getBounds()) || ball.getBounds().intersects(paddleP2.getBounds())) {
-                       if (ball.getBounds().intersects(paddleP1.getBounds())) {
+            // checks for collision
+            if (ball.getX() > 330 && balLastPos < 330 || ball.getX() < 30 && balLastPos > 33) {
+                if (ball.getX() > 330 && balLastPos < 330) {
 
-                           // flips the balls incoming trajectory
-                           ballAngle *= -1;
+                    // flips the balls incoming trajectory
+                    ballAngle *= -1;
 
-                           // reverses the previous trajectory to get an exit trajectory
-                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+                    // reverses the previous trajectory to get an exit trajectory
+                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
 
-                           // sets the trajectory within a certain locationary bounds
-                           ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
-                                   ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
-                           ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
-                       } else {
+                    // sets the trajectory within a certain locationary bounds
+                    ball.setLocation(Math.clamp((ball.getX()), 30, 330), ball.getY());
+                } else {
 
-                           // flips the balls incoming trajectory
-                           ballAngle *= -1;
+                    // flips the balls incoming trajectory
+                    ballAngle *= -1;
 
-                           // reverses the previous trajectory to get an exit trajectory
-                           ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+                    // reverses the previous trajectory to get an exit trajectory
+                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
 
-                           // sets the trajectory within a certain locationary bounds
-                           ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
-                                   ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
-                           ball.setLocation(Math.clamp((ball.getX()),30, 330), ball.getY());
-                        }
+                    // sets the trajectory within a certain locationary bounds
+                    ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                            ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
+                    ball.setLocation(Math.clamp((ball.getX()), 30, 330), ball.getY());
+                }
 
-                    // checks to see if ball is in bounds or out of bounds
-                    } else if (!ball.getBounds().intersects(mainPanel.getBounds())) {
-                        bAstorage = ball.getX();
-                        ball.setLocation(100,100);
-                        ballAngle = 1;
-                        if (bAstorage > 50) {
-                            scoreCounterP1.setText(Integer.toString(Integer.valueOf(scoreCounterP1.getText()) + 1));
-                        } else {
-                            scoreCounterP2.setText(Integer.toString(Integer.valueOf(scoreCounterP2.getText()) + 1));
-                        }
-                    }
-
-                    // randomize roof bounce angles cause why not
-                    if (ball.getY() > 240 || ball.getY() < 0) {
-                        ballAngle *= -1;
-                        ballAngle += Math.random() * 10;
-                        ball.setLocation(ball.getX(),Math.clamp((ball.getY()),0, 240));
-                    }
-
-                    // sleep to maintain tick rate
-                    baseLogic.tryWait(tickLengthInMs);
+                // checks to see if ball is in bounds or out of bounds
+            } else if (!ball.getBounds().intersects(mainPanel.getBounds())) {
+                bAstorage = ball.getX();
+                ball.setLocation(100, 100);
+                ballAngle = 1;
+                if (bAstorage > 50) {
+                    scoreCounterP1.setText(Integer.toString(Integer.valueOf(scoreCounterP1.getText()) + 1));
+                } else {
+                    scoreCounterP2.setText(Integer.toString(Integer.valueOf(scoreCounterP2.getText()) + 1));
                 }
             }
-        });
 
-        // begin
-        Paddles.start();
-        background.start();
-        ballMove.start();
+            // randomize roof bounce angles cause why not
+            if (ball.getY() > 240 || ball.getY() < 0) {
+                ballAngle *= -1;
+                ballAngle += Math.random() * 10;
+                ball.setLocation(ball.getX(), Math.clamp((ball.getY()), 0, 240));
+            }
+            balLastPos = ball.getX();
+            System.out.println(ball.getX());
+        }
     }
 }
 //class that aids the JTextField in searching for keys
