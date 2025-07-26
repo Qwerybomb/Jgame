@@ -158,58 +158,62 @@ class game implements baseLogic {
         
     //Ball calculations
     public void BallIterate() {
-        if (!(ball.getX() > 330)) {
             // move the ball a constant amount per tick
             ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
                     ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
 
             // checks for collision
-            if (ball.getX() > 330 && balLastPos < 330 || ball.getX() < 30 && balLastPos > 33) {
-                if (ball.getX() > 330 && balLastPos < 330) {
+            if (ball.getBounds().intersects(paddleP1.getBounds()) || ball.getBounds().intersects(paddleP2.getBounds())) {
+                if (ball.getBounds().intersects(paddleP1.getBounds())) {
 
                     // flips the balls incoming trajectory
                     ballAngle *= -1;
 
                     // reverses the previous trajectory to get an exit trajectory
-                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2));
 
                     // sets the trajectory within a certain locationary bounds
                     ball.setLocation(Math.clamp((ball.getX()), 30, 330), ball.getY());
                 } else {
-
                     // flips the balls incoming trajectory
                     ballAngle *= -1;
 
                     // reverses the previous trajectory to get an exit trajectory
-                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2) + (Math.random() * 4));
+                    ballAngle = ballAngle + (180 + ((double) ((ball.getY() - paddleP2.getY())) / 2));
 
                     // sets the trajectory within a certain locationary bounds
-                    ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
-                            ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
                     ball.setLocation(Math.clamp((ball.getX()), 30, 330), ball.getY());
                 }
 
                 // checks to see if ball is in bounds or out of bounds
-            } else if (!ball.getBounds().intersects(mainPanel.getBounds())) {
+            } else if (ball.getX() < 15 || ball.getX() > 340) {
                 bAstorage = ball.getX();
-                ball.setLocation(100, 100);
-                ballAngle = 1;
+                ballAngle = 20;
                 if (bAstorage > 50) {
                     scoreCounterP1.setText(Integer.toString(Integer.valueOf(scoreCounterP1.getText()) + 1));
+                    for (int i = 0; i < 7; i++) {
+                        ball.setLocation(ball.getX() + (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                                ball.getY() + (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
+                        baseLogic.tryWait(baseLogic.tickLengthInMs);
+                    }
                 } else {
                     scoreCounterP2.setText(Integer.toString(Integer.valueOf(scoreCounterP2.getText()) + 1));
+                    for (int i = 0; i < 7; i++) {
+                        ball.setLocation(ball.getX() - (int) Math.round(Math.cos(Math.toRadians(ballAngle)) * ballTravelConstant),
+                                ball.getY() - (int) Math.round(Math.sin(Math.toRadians(ballAngle)) * ballTravelConstant));
+                        baseLogic.tryWait(baseLogic.tickLengthInMs);
+                    }
                 }
+                ball.setLocation(100, 100);
             }
+
 
             // randomize roof bounce angles cause why not
             if (ball.getY() > 240 || ball.getY() < 0) {
                 ballAngle *= -1;
-                ballAngle += Math.random() * 10;
-                ball.setLocation(ball.getX(), Math.clamp((ball.getY()), 0, 240));
+
             }
             balLastPos = ball.getX();
-            System.out.println(ball.getX());
-        }
     }
 }
 //class that aids the JTextField in searching for keys
